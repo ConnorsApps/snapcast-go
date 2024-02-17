@@ -7,9 +7,9 @@ import (
 type Method string
 
 const (
-	RequestClientSetVolume Method = "Client.SetVolume"
-	RequestGroupSetStream  Method = "Group.SetStream"
-	RequestServerGetStatus Method = "Server.GetStatus"
+	MethodClientSetVolume Method = "Client.SetVolume"
+	MethodGroupSetStream  Method = "Group.SetStream"
+	MethodServerGetStatus Method = "Server.GetStatus"
 
 	MethodServerOnUpdate        Method = "Server.OnUpdate"
 	MethodStreamOnUpdate        Method = "Stream.OnUpdate"

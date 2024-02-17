@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -35,8 +36,9 @@ type Client struct {
 }
 
 type ClientOptions struct {
-	Host             string
-	RateLimiter      *rate.Limiter
+	Host        string
+	RateLimiter *rate.Limiter
+	// if secure then https & wss and used else http & ws protocols
 	SecureConnection bool
 }
 
@@ -74,18 +76,61 @@ type Notifications struct {
 	ClientOnNameChanged   chan *snapcast.ClientOnNameChanged
 }
 
-func (c *Client) Listen(n *Notifications) {
-	defer c.ws.Close()
+func (c *Client) wsConnect() error {
+	scheme := "ws"
+	if c.secureConnection {
+		scheme = "wss"
+	}
 
-	ch := make(chan *snapcast.Message, 5)
+	var (
+		u   = url.URL{Scheme: scheme, Host: c.host, Path: "/jsonrpc"}
+		err error
+	)
+
+	c.ws, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to connect to snapcast at '%s', err: %w", c.host, err)
+	}
+
+	return nil
+}
+
+func (c *Client) Listen(n *Notifications) (func() error, error) {
+	var (
+		ch = make(chan *snapcast.Message, 5)
+
+		wsClose = make(chan error) // todo handle close
+
+		cancel = func() error {
+			err := c.ws.WriteMessage(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+			)
+			if err != nil {
+				return fmt.Errorf("failed to write close message to snapcast, err: %w", err)
+			}
+
+			c.ws.Close()
+			close(ch)
+			return nil
+		}
+	)
+
+	if err := c.wsConnect(); err != nil {
+		return cancel, err
+	}
 
 	go func() {
 		for {
 			_, raw, err := c.ws.ReadMessage()
 			if err != nil {
-				if strings.Contains(err.Error(), "close sent") {
+				fmt.Printf("err %v \n", err)
+
+				if strings.Contains(err.Error(), "(abnormal closure): unexpected EOF") {
 					close(ch)
-					// todo close out listener
+					return
+				} else if strings.Contains(err.Error(), "close sent") {
+					close(ch)
 					return
 				} else {
 					if n.MsgReaderErr != nil {
@@ -95,7 +140,8 @@ func (c *Client) Listen(n *Notifications) {
 				}
 
 			}
-			var msg *snapcast.Message
+
+			var msg = &snapcast.Message{}
 
 			if err := json.Unmarshal(raw, msg); err != nil {
 				if n.MsgReaderErr != nil {
@@ -111,105 +157,18 @@ func (c *Client) Listen(n *Notifications) {
 		}
 	}()
 
-	for {
-		select {
-		case msg, ok := <-ch:
-			if !ok {
+	go func() {
+		for {
+			msg, ok := <-ch
+			if !ok { // Websocket closed
 				return
 			}
 
 			go n.handleMessage(msg)
 		}
-	}
-}
+	}()
 
-func (n *Notifications) readErr(err error) {
-	if n.MsgReaderErr != nil {
-		n.MsgReaderErr <- err
-	}
-}
-
-func (n *Notifications) handleMessage(msg *snapcast.Message) {
-	switch *msg.Method {
-	case snapcast.MethodServerOnUpdate:
-		if n.ServerOnUpdate == nil {
-			return
-		}
-
-		var p *snapcast.ServerOnUpdate
-		if err := marshalJSON(msg.Params, p); err != nil {
-			n.readErr(err)
-			return
-		}
-		n.ServerOnUpdate <- p
-	case snapcast.MethodStreamOnUpdate:
-		if n.StreamOnUpdate == nil {
-			return
-		}
-
-		var p *snapcast.StreamOnUpdate
-		if err := marshalJSON(msg.Params, p); err != nil {
-			n.readErr(err)
-			return
-		}
-		n.StreamOnUpdate <- p
-
-	case snapcast.MethodGroupOnStreamChanged:
-		if n.GroupOnStreamChanged == nil {
-			return
-		}
-
-		var p *snapcast.GroupOnStreamChanged
-		if err := marshalJSON(msg.Params, p); err != nil {
-			n.readErr(err)
-			return
-		}
-		n.GroupOnStreamChanged <- p
-
-	case snapcast.MethodClientOnConnect:
-		if n.ClientOnConnect == nil {
-			return
-		}
-		var p *snapcast.ClientOnConnect
-		if err := marshalJSON(msg.Params, p); err != nil {
-			n.readErr(err)
-			return
-		}
-		n.ClientOnConnect <- p
-
-	case snapcast.MethodClientOnDisconnect:
-		if n.ClientOnDisconnect == nil {
-			return
-		}
-		var p *snapcast.ClientOnDisconnect
-		if err := marshalJSON(msg.Params, p); err != nil {
-			n.readErr(err)
-			return
-		}
-		n.ClientOnDisconnect <- p
-
-	case snapcast.MethodClientOnVolumeChanged:
-		if n.ClientOnVolumeChanged == nil {
-			return
-		}
-		var p *snapcast.ClientOnVolumeChanged
-		if err := marshalJSON(msg.Params, p); err != nil {
-			n.readErr(err)
-			return
-		}
-		n.ClientOnVolumeChanged <- p
-
-	case snapcast.MethodClientOnNameChanged:
-		if n.ClientOnNameChanged == nil {
-			return
-		}
-		var p *snapcast.ClientOnNameChanged
-		if err := marshalJSON(msg.Params, p); err != nil {
-			n.readErr(err)
-			return
-		}
-		n.ClientOnNameChanged <- p
-	}
+	return cancel, nil
 }
 
 func (c *Client) Send(ctx context.Context, method snapcast.Method, params interface{}) (*snapcast.Message, error) {
