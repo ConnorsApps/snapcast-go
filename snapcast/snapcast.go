@@ -1,26 +1,23 @@
 package snapcast
 
 import (
-	"encoding/json"
-	"fmt"
 	"time"
 )
 
 type Method string
 
 const (
-	UnknownMethod         Method = "Unknown"
-	ClientSetVolumeMethod Method = "Client.SetVolume"
-	GroupSetStreamMethod  Method = "Group.SetStream"
-	ServerGetStatusMethod Method = "Server.GetStatus"
+	RequestClientSetVolume Method = "Client.SetVolume"
+	RequestGroupSetStream  Method = "Group.SetStream"
+	RequestServerGetStatus Method = "Server.GetStatus"
 
-	ServerOnUpdateMethod        Method = "Server.OnUpdate"
-	StreamOnUpdateMethod        Method = "Stream.OnUpdate"
-	GroupOnStreamChangedMethod  Method = "Group.OnStreamChanged"
-	ClientOnConnectMethod       Method = "Client.OnConnect"
-	ClientOnDisconnectMethod    Method = "Client.OnDisconnect"
-	ClientOnVolumeChangedMethod Method = "Client.OnVolumeChanged"
-	ClientOnNameChangedMethod   Method = "Client.OnNameChanged"
+	MethodServerOnUpdate        Method = "Server.OnUpdate"
+	MethodStreamOnUpdate        Method = "Stream.OnUpdate"
+	MethodGroupOnStreamChanged  Method = "Group.OnStreamChanged"
+	MethodClientOnConnect       Method = "Client.OnConnect"
+	MethodClientOnDisconnect    Method = "Client.OnDisconnect"
+	MethodClientOnVolumeChanged Method = "Client.OnVolumeChanged"
+	MethodClientOnNameChanged   Method = "Client.OnNameChanged"
 )
 
 type StreamStatus string
@@ -52,20 +49,6 @@ type Message struct {
 	Result     interface{} `json:"result,omitempty"`
 	Params     interface{} `json:"params,omitempty"`
 	ReceivedAt time.Time   `json:"-"`
-}
-
-func ParseMessage(msg []byte) (Message, error) {
-	var message Message
-
-	err := json.Unmarshal(msg, &message)
-	if err != nil {
-		err = fmt.Errorf("failed to unmarshal message: %s", err)
-		return message, err
-	}
-
-	message.ReceivedAt = time.Now()
-
-	return message, nil
 }
 
 type Stream struct {
