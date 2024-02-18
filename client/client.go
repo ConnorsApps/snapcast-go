@@ -35,14 +35,14 @@ type Client struct {
 	httpClient       *http.Client
 }
 
-type ClientOptions struct {
+type Options struct {
 	Host        string
 	RateLimiter *rate.Limiter
 	// if secure then https & wss and used else http & ws protocols
 	SecureConnection bool
 }
 
-func NewClient(o *ClientOptions) *Client {
+func New(o *Options) *Client {
 	if o.RateLimiter == nil {
 		o.RateLimiter = rate.NewLimiter(DefaultRate, DefaultRequestBurst)
 	}
@@ -55,14 +55,6 @@ func NewClient(o *ClientOptions) *Client {
 		}},
 		secureConnection: o.SecureConnection,
 	}
-}
-
-func marshalJSON(i interface{}, to interface{}) error {
-	raw, err := json.Marshal(i)
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(raw, to)
 }
 
 type Notifications struct {
@@ -95,29 +87,28 @@ func (c *Client) wsConnect() error {
 	return nil
 }
 
-func (c *Client) Listen(n *Notifications) (func() error, error) {
+func (c *Client) Close() error {
+	err := c.ws.WriteMessage(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to write close message to snapcast, err: %w", err)
+	}
+
+	c.ws.Close()
+	return nil
+}
+
+// Listens until there's a failure to connect or if the websocket gets closed
+func (c *Client) Listen(n *Notifications) error {
 	var (
-		ch = make(chan *snapcast.Message, 5)
-
-		wsClose = make(chan error) // todo handle close
-
-		cancel = func() error {
-			err := c.ws.WriteMessage(
-				websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
-			)
-			if err != nil {
-				return fmt.Errorf("failed to write close message to snapcast, err: %w", err)
-			}
-
-			c.ws.Close()
-			close(ch)
-			return nil
-		}
+		ch      = make(chan *snapcast.Message, 5)
+		wsClose = make(chan error)
 	)
 
 	if err := c.wsConnect(); err != nil {
-		return cancel, err
+		return err
 	}
 
 	go func() {
@@ -128,13 +119,15 @@ func (c *Client) Listen(n *Notifications) (func() error, error) {
 
 				if strings.Contains(err.Error(), "(abnormal closure): unexpected EOF") {
 					close(ch)
+					wsClose <- nil
 					return
 				} else if strings.Contains(err.Error(), "close sent") {
 					close(ch)
+					wsClose <- nil
 					return
 				} else {
 					if n.MsgReaderErr != nil {
-						n.MsgReaderErr <- err
+						wsClose <- err
 					}
 					continue
 				}
@@ -168,7 +161,7 @@ func (c *Client) Listen(n *Notifications) (func() error, error) {
 		}
 	}()
 
-	return cancel, nil
+	return <-wsClose
 }
 
 func (c *Client) Send(ctx context.Context, method snapcast.Method, params interface{}) (*snapcast.Message, error) {

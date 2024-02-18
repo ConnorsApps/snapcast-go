@@ -1,9 +1,18 @@
 package client
 
 import (
+	"encoding/json"
+
 	"github.com/ConnorsApps/snapcast-go/snapcast"
 )
 
+func marshalJSON(i interface{}, to interface{}) error {
+	raw, err := json.Marshal(i)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(raw, to)
+}
 func (n *Notifications) readErr(err error) {
 	if n.MsgReaderErr != nil {
 		n.MsgReaderErr <- err

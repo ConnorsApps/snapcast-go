@@ -12,7 +12,7 @@ import (
 
 func TestClient(t *testing.T) {
 	a := assert.New(t)
-	c := NewClient(&ClientOptions{Host: "audio.connorskees.com:1780", SecureConnection: false})
+	c := New(&Options{Host: "audio.connorskees.com:1780", SecureConnection: false})
 	_, err := c.Send(context.Background(), snapcast.MethodServerGetStatus, &snapcast.ServerGetStatusRequest{})
 	a.Nil(err)
 
@@ -28,9 +28,12 @@ func TestClient(t *testing.T) {
 		}
 	}()
 
-	cancel, err := c.Listen(n)
-	defer cancel()
-	a.Nil(err)
+	go func() {
+		err := c.Listen(n)
+		a.Nil(err)
+	}()
+
+	defer c.Close()
 
 	fmt.Println("Listening")
 
