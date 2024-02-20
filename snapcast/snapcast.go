@@ -1,6 +1,7 @@
 package snapcast
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -49,6 +50,18 @@ type Message struct {
 	Result     interface{} `json:"result,omitempty"`
 	Params     interface{} `json:"params,omitempty"`
 	ReceivedAt time.Time   `json:"-"`
+}
+
+func ParseResult[T any](result interface{}) (*T, error) {
+	var t = new(T)
+	data, err := json.Marshal(result)
+	if err != nil {
+		return t, err
+	}
+
+	err = json.Unmarshal(data, t)
+
+	return t, err
 }
 
 type Stream struct {

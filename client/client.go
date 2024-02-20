@@ -100,15 +100,15 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// Listens until there's a failure to connect or if the websocket gets closed
-func (c *Client) Listen(n *Notifications) error {
+// Passes a websocket closer channel or an error on initial setup
+func (c *Client) Listen(n *Notifications) (chan error, error) {
 	var (
 		ch      = make(chan *snapcast.Message, 5)
 		wsClose = make(chan error)
 	)
 
 	if err := c.wsConnect(); err != nil {
-		return err
+		return wsClose, err
 	}
 
 	go func() {
@@ -161,7 +161,7 @@ func (c *Client) Listen(n *Notifications) error {
 		}
 	}()
 
-	return <-wsClose
+	return wsClose, nil
 }
 
 func (c *Client) Send(ctx context.Context, method snapcast.Method, params interface{}) (*snapcast.Message, error) {

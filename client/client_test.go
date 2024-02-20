@@ -28,10 +28,8 @@ func TestClient(t *testing.T) {
 		}
 	}()
 
-	go func() {
-		err := c.Listen(n)
-		a.Nil(err)
-	}()
+	_, err = c.Listen(n)
+	a.Nil(err)
 
 	defer c.Close()
 
