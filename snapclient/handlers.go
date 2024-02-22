@@ -1,4 +1,4 @@
-package client
+package snapclient
 
 import (
 	"encoding/json"
