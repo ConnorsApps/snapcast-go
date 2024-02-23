@@ -1,74 +1,80 @@
 package snapcast
 
-type ClientSetVolumeRequest struct {
-	ID     string `json:"id"`
-	Volume Volume `json:"volume"`
-}
+// Request Response
+type (
+	ClientSetVolumeRequest struct {
+		ID     string `json:"id"`
+		Volume Volume `json:"volume"`
+	}
 
-type ClientSetVolumeResponse struct {
-	Volume Volume `json:"volume"`
-}
+	ClientSetVolumeResponse struct {
+		Volume Volume `json:"volume"`
+	}
 
-type GroupSetStreamRequest struct {
-	ID       string `json:"id"`
-	StreamID string `json:"stream_id"`
-}
+	GroupSetStreamRequest struct {
+		ID       string `json:"id"`
+		StreamID string `json:"stream_id"`
+	}
 
-type GroupSetStreamResponse struct {
-	StreamID string `json:"stream_id"`
-}
+	GroupSetStreamResponse struct {
+		StreamID string `json:"stream_id"`
+	}
 
-type ServerGetStatusRequest struct{}
+	ServerGetStatusRequest struct{}
 
-type ServerGetStatusResponse struct {
-	Server Server `json:"server"`
-}
+	ServerGetStatusResponse struct {
+		Server Server `json:"server"`
+	}
+)
 
-type StreamOnUpdate struct {
-	ID     string `json:"id"`
-	Stream Stream `json:"stream"`
-}
+// Notifications
+type (
+	StreamOnUpdate struct {
+		ID     string `json:"id"`
+		Stream Stream `json:"stream"`
+	}
 
-type ServerOnUpdate struct {
-	Server Server `json:"server"`
-}
+	ServerOnUpdate struct {
+		Server Server `json:"server"`
+	}
 
-type ClientOnConnect struct {
-	Client *Client `json:"client"`
-	ID     string  `json:"id"`
-}
+	ClientOnConnect struct {
+		Client *Client `json:"client"`
+		ID     string  `json:"id"`
+	}
 
-type ClientOnDisconnect struct {
-	Client *Client `json:"client"`
-	ID     string  `json:"id"`
-}
+	ClientOnDisconnect struct {
+		Client *Client `json:"client"`
+		ID     string  `json:"id"`
+	}
 
-type ClientOnLatencyChanged struct {
-	Latency int    `json:"latency"`
-	ID      string `json:"id"`
-}
+	ClientOnLatencyChanged struct {
+		Latency int    `json:"latency"`
+		ID      string `json:"id"`
+	}
 
-type ClientOnVolumeChanged struct {
-	Volume Volume `json:"volume"`
-	ID     string `json:"id"`
-}
+	ClientOnVolumeChanged struct {
+		Volume Volume `json:"volume"`
+		ID     string `json:"id"`
+	}
 
-type ClientOnNameChanged struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
+	ClientOnNameChanged struct {
+		Name string `json:"name"`
+		ID   string `json:"id"`
+	}
 
-type GroupOnStreamChanged struct {
-	ID       string `json:"id"`
-	StreamId string `json:"stream_id"`
-}
+	GroupOnStreamChanged struct {
+		ID       string `json:"id"`
+		StreamId string `json:"stream_id"`
+	}
 
-type GroupOnNameChanged struct {
-	Name string `json:"name"`
-	ID   string `json:"id"`
-}
+	GroupOnNameChanged struct {
+		Name string `json:"name"`
+		ID   string `json:"id"`
+	}
 
-type StreamOnProperties struct {
-	ID       string            `json:"id"`
-	Metadata map[string]string `json:"metadata"`
-}
+	StreamOnProperties struct {
+		ID       string            `json:"id"`
+		Metadata map[string]string `json:"metadata"`
+	}
+)

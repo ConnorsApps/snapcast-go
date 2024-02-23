@@ -127,7 +127,7 @@ func (c *Client) Listen(n *Notifications) (chan error, error) {
 					return
 				} else {
 					if n.MsgReaderErr != nil {
-						wsClose <- err
+						n.MsgReaderErr <- err
 					}
 					continue
 				}
@@ -157,7 +157,7 @@ func (c *Client) Listen(n *Notifications) (chan error, error) {
 				return
 			}
 
-			go n.handleMessage(msg)
+			n.handleMessage(msg)
 		}
 	}()
 
