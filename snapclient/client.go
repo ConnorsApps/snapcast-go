@@ -56,14 +56,23 @@ func New(o *Options) *Client {
 }
 
 type Notifications struct {
-	MsgReaderErr          chan error
-	ServerOnUpdate        chan *snapcast.ServerOnUpdate
-	StreamOnUpdate        chan *snapcast.StreamOnUpdate
-	GroupOnStreamChanged  chan *snapcast.GroupOnStreamChanged
-	ClientOnConnect       chan *snapcast.ClientOnConnect
-	ClientOnDisconnect    chan *snapcast.ClientOnDisconnect
-	ClientOnVolumeChanged chan *snapcast.ClientOnVolumeChanged
-	ClientOnNameChanged   chan *snapcast.ClientOnNameChanged
+	MsgReaderErr chan error
+
+	// Client
+	ClientOnConnect        chan *snapcast.ClientOnConnect
+	ClientOnDisconnect     chan *snapcast.ClientOnDisconnect
+	ClientOnVolumeChanged  chan *snapcast.ClientOnVolumeChanged
+	ClientOnLatencyChanged chan *snapcast.ClientOnLatencyChanged
+	ClientOnNameChanged    chan *snapcast.ClientOnNameChanged
+	// Group
+	GroupOnMute          chan *snapcast.GroupOnMute
+	GroupOnStreamChanged chan *snapcast.GroupOnStreamChanged
+	GroupOnNameChanged   chan *snapcast.GroupOnNameChanged
+	// Stream
+	StreamOnUpdate     chan *snapcast.StreamOnUpdate
+	StreamOnProperties chan *snapcast.StreamOnProperties
+	// Server
+	ServerOnUpdate chan *snapcast.ServerOnUpdate
 }
 
 // Passes a websocket closer channel or an error on initial setup
