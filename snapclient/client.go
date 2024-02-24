@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -18,7 +16,7 @@ import (
 
 var (
 	DefaultRequestBurst = 10
-	DefaultRate         = rate.Every(time.Second / 2)
+	DefaultRequestRate  = rate.Every(time.Second / 2)
 )
 
 type state struct {
@@ -44,7 +42,7 @@ type Options struct {
 
 func New(o *Options) *Client {
 	if o.RateLimiter == nil {
-		o.RateLimiter = rate.NewLimiter(DefaultRate, DefaultRequestBurst)
+		o.RateLimiter = rate.NewLimiter(3, DefaultRequestBurst)
 	}
 
 	return &Client{
@@ -68,91 +66,23 @@ type Notifications struct {
 	ClientOnNameChanged   chan *snapcast.ClientOnNameChanged
 }
 
-func (c *Client) wsConnect() error {
-	scheme := "ws"
-	if c.secureConnection {
-		scheme = "wss"
-	}
-
-	var (
-		u   = url.URL{Scheme: scheme, Host: c.host, Path: "/jsonrpc"}
-		err error
-	)
-
-	c.ws, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
-	if err != nil {
-		return fmt.Errorf("failed to connect to snapcast at '%s', err: %w", c.host, err)
-	}
-
-	return nil
-}
-
-func (c *Client) Close() error {
-	err := c.ws.WriteMessage(
-		websocket.CloseMessage,
-		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to write close message to snapcast, err: %w", err)
-	}
-
-	c.ws.Close()
-	return nil
-}
-
 // Passes a websocket closer channel or an error on initial setup
 func (c *Client) Listen(n *Notifications) (chan error, error) {
 	var (
-		ch      = make(chan *snapcast.Message, 5)
+		msgChan = make(chan *snapcast.Message, 5)
 		wsClose = make(chan error)
 	)
+
+	wsClose = make(chan error)
 
 	if err := c.wsConnect(); err != nil {
 		return wsClose, err
 	}
+	go c.readMessages(n, msgChan, wsClose)
 
 	go func() {
 		for {
-			_, raw, err := c.ws.ReadMessage()
-			if err != nil {
-				fmt.Printf("err %v \n", err)
-
-				if strings.Contains(err.Error(), "(abnormal closure): unexpected EOF") {
-					close(ch)
-					wsClose <- nil
-					return
-				} else if strings.Contains(err.Error(), "close sent") {
-					close(ch)
-					wsClose <- nil
-					return
-				} else {
-					if n.MsgReaderErr != nil {
-						n.MsgReaderErr <- err
-					}
-					continue
-				}
-
-			}
-
-			var msg = &snapcast.Message{}
-
-			if err := json.Unmarshal(raw, msg); err != nil {
-				if n.MsgReaderErr != nil {
-					n.MsgReaderErr <- err
-				}
-				continue
-			}
-
-			// Only process notifications, not responses to requests
-			if msg.Params != nil && msg.Method != nil {
-				ch <- msg
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			msg, ok := <-ch
+			msg, ok := <-msgChan
 			if !ok { // Websocket closed
 				return
 			}
