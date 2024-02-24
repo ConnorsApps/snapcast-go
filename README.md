@@ -9,3 +9,6 @@ For more information on the Snapcast JSON RPC API, refer to the [Snapcast JSON R
 	> Types for api
 - `snapclient/`
 	> Full client implementation using [gorilla/websocket](https://github.com/gorilla/websocket)
+
+## Usage
+See the [example client](./examples/example-client.go) for getting started.

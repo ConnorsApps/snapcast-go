@@ -5,20 +5,57 @@ import (
 	"time"
 )
 
-type Method string
+type RequestMethod string
 
+// Requests
 const (
-	MethodClientSetVolume Method = "Client.SetVolume"
-	MethodGroupSetStream  Method = "Group.SetStream"
-	MethodServerGetStatus Method = "Server.GetStatus"
+	// Client
+	MethodClientGetStatus  RequestMethod = "Client.GetStatus"
+	MethodClientSetVolume  RequestMethod = "Client.SetVolume"
+	MethodClientSetLatency RequestMethod = "Client.SetLatency"
+	MethodClientSetName    RequestMethod = "Client.SetName"
 
-	MethodServerOnUpdate        Method = "Server.OnUpdate"
-	MethodStreamOnUpdate        Method = "Stream.OnUpdate"
-	MethodGroupOnStreamChanged  Method = "Group.OnStreamChanged"
-	MethodClientOnConnect       Method = "Client.OnConnect"
-	MethodClientOnDisconnect    Method = "Client.OnDisconnect"
-	MethodClientOnVolumeChanged Method = "Client.OnVolumeChanged"
-	MethodClientOnNameChanged   Method = "Client.OnNameChanged"
+	// Group
+	MethodGroupGetStatus  RequestMethod = "Group.GetStatus"
+	MethodGroupSetMute    RequestMethod = "Group.SetMute"
+	MethodGroupSetStream  RequestMethod = "Group.SetStream"
+	MethodGroupSetClients RequestMethod = "Group.SetClients"
+	MethodGroupSetName    RequestMethod = "Group.SetName"
+
+	// Server
+	MethodServerGetRPCVersion RequestMethod = "Server.GetRPCVersion"
+	MethodServerGetStatus     RequestMethod = "Server.GetStatus"
+	MethodServerDeleteClient  RequestMethod = "Server.DeleteClient"
+
+	// Stream
+	MethodStreamAddStream    RequestMethod = "Stream.AddStream"
+	MethodStreamRemoveStream RequestMethod = "Stream.RemoveStream"
+	MethodStreamControl      RequestMethod = "Stream.Control"
+	MethodStreamSetProperty  RequestMethod = "Stream.SetProperty"
+)
+
+type NotificationMethod string
+
+// Notifications
+const (
+	// Client
+	MethodClientOnConnect        NotificationMethod = "Client.OnConnect"
+	MethodClientOnDisconnect     NotificationMethod = "Client.OnDisconnect"
+	MethodClientOnVolumeChanged  NotificationMethod = "Client.OnVolumeChanged"
+	MethodClientOnLatencyChanged NotificationMethod = "Client.OnLatencyChanged"
+	MethodClientOnNameChanged    NotificationMethod = "Client.OnNameChanged"
+
+	// Group
+	MethodGroupOnMute          NotificationMethod = "Group.OnMute"
+	MethodGroupOnStreamChanged NotificationMethod = "Group.OnStreamChanged"
+	MethodGroupOnNameChanged   NotificationMethod = "Group.OnNameChanged"
+
+	// Stream
+	MethodStreamOnProperties NotificationMethod = "Stream.OnProperties"
+	MethodStreamOnUpdate     NotificationMethod = "Stream.OnUpdate"
+
+	// Server
+	MethodServerOnUpdate NotificationMethod = "Server.OnUpdate"
 )
 
 type StreamStatus string
@@ -43,14 +80,27 @@ type (
 		Message string      `json:"message,omitempty"`
 	}
 
-	Message struct {
+	Notification struct {
+		ID         *int                `json:"id,omitempty"`
+		JsonRPC    string              `json:"jsonrpc,omitempty"`
+		Method     *NotificationMethod `json:"method,omitempty"`
+		Params     interface{}         `json:"params,omitempty"`
+		ReceivedAt time.Time           `json:"-"`
+	}
+
+	Response struct {
 		ID         *int        `json:"id,omitempty"`
 		JsonRPC    string      `json:"jsonrpc,omitempty"`
-		Method     *Method     `json:"method,omitempty"`
 		Error      *Error      `json:"error,omitempty"`
 		Result     interface{} `json:"result,omitempty"`
-		Params     interface{} `json:"params,omitempty"`
 		ReceivedAt time.Time   `json:"-"`
+	}
+
+	Request struct {
+		ID      *int           `json:"id,omitempty"`
+		JsonRPC string         `json:"jsonrpc,omitempty"`
+		Method  *RequestMethod `json:"method,omitempty"`
+		Params  interface{}    `json:"params,omitempty"`
 	}
 )
 

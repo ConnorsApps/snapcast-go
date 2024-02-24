@@ -69,7 +69,7 @@ type Notifications struct {
 // Passes a websocket closer channel or an error on initial setup
 func (c *Client) Listen(n *Notifications) (chan error, error) {
 	var (
-		msgChan = make(chan *snapcast.Message, 5)
+		msgChan = make(chan *snapcast.Notification, 5)
 		wsClose = make(chan error)
 	)
 
@@ -78,7 +78,7 @@ func (c *Client) Listen(n *Notifications) (chan error, error) {
 	if err := c.wsConnect(); err != nil {
 		return wsClose, err
 	}
-	go c.readMessages(n, msgChan, wsClose)
+	go c.readNotifications(n, msgChan, wsClose)
 
 	go func() {
 		for {
@@ -87,21 +87,21 @@ func (c *Client) Listen(n *Notifications) (chan error, error) {
 				return
 			}
 
-			n.handleMessage(msg)
+			n.handleNotification(msg)
 		}
 	}()
 
 	return wsClose, nil
 }
 
-func (c *Client) Send(ctx context.Context, method snapcast.Method, params interface{}) (*snapcast.Message, error) {
+func (c *Client) Send(ctx context.Context, method snapcast.RequestMethod, params interface{}) (*snapcast.Response, error) {
 	c.state.Lock()
 	c.state.reqCount += 1
 	c.state.Unlock()
 
 	var (
 		id  = int(c.state.reqCount)
-		req = snapcast.Message{
+		req = snapcast.Request{
 			ID:      &id,
 			JsonRPC: "2.0",
 			Method:  &method,
@@ -109,7 +109,7 @@ func (c *Client) Send(ctx context.Context, method snapcast.Method, params interf
 		}
 	)
 
-	var response = &snapcast.Message{}
+	var response = &snapcast.Response{}
 
 	// Limit requests/sec so we don't DOS the poor server
 	if err := c.limiter.Wait(ctx); err != nil {

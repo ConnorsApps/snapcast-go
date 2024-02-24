@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func (c *Client) readMessages(n *Notifications, msgChan chan *snapcast.Message, wsClose chan error) {
+func (c *Client) readNotifications(n *Notifications, msgChan chan *snapcast.Notification, wsClose chan error) {
 	for {
 		_, raw, err := c.ws.ReadMessage()
 		if err != nil {
@@ -23,7 +23,7 @@ func (c *Client) readMessages(n *Notifications, msgChan chan *snapcast.Message, 
 			continue
 		}
 
-		var msg = &snapcast.Message{}
+		var msg = &snapcast.Notification{}
 
 		if err := json.Unmarshal(raw, msg); err != nil {
 			if n.MsgReaderErr != nil {

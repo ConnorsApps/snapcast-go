@@ -18,7 +18,7 @@ func (n *Notifications) readErr(err error) {
 		n.MsgReaderErr <- err
 	}
 }
-func (n *Notifications) handleMessage(msg *snapcast.Message) {
+func (n *Notifications) handleNotification(msg *snapcast.Notification) {
 	switch *msg.Method {
 	case snapcast.MethodServerOnUpdate:
 		if n.ServerOnUpdate == nil {
