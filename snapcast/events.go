@@ -120,19 +120,20 @@ type (
 	}
 
 	StreamControl struct {
-		Command string      `json:"command"`
-		Params  interface{} `json:"params"`
+		ID      string        `json:"id"`
+		Command StreamCommand `json:"command"`
+		Params  interface{}   `json:"params,omitempty"`
 	}
 
 	StreamControlResponse string
 
-	StreamSetPropety struct {
+	StreamSetProperty struct {
 		ID       string      `json:"id"`
-		Property interface{} `json:"property"`
+		Property string      `json:"property"`
 		Value    interface{} `json:"value"`
 	}
 
-	StreamSetPropetyResponse string
+	StreamSetPropertyResponse string
 )
 
 // Notifications
@@ -183,8 +184,8 @@ type (
 	}
 
 	StreamOnProperties struct {
-		ID       string            `json:"id"`
-		Metadata map[string]string `json:"metadata"`
+		ID         string     `json:"id"`
+		Properties Properties `json:"properties"`
 	}
 
 	ServerOnUpdate struct {

@@ -73,6 +73,35 @@ func (s StreamStatus) IsIdle() bool {
 	return s == StreamIdle
 }
 
+type PlaybackStatus string
+
+const (
+	PlaybackPlaying PlaybackStatus = "playing"
+	PlaybackPaused  PlaybackStatus = "paused"
+	PlaybackStopped PlaybackStatus = "stopped"
+)
+
+type LoopStatus string
+
+const (
+	LoopNone     LoopStatus = "none"
+	LoopTrack    LoopStatus = "track"
+	LoopPlaylist LoopStatus = "playlist"
+)
+
+type StreamCommand string
+
+const (
+	StreamCommandNext        StreamCommand = "next"
+	StreamCommandPrevious    StreamCommand = "previous"
+	StreamCommandPlay        StreamCommand = "play"
+	StreamCommandPause       StreamCommand = "pause"
+	StreamCommandPlayPause   StreamCommand = "playPause"
+	StreamCommandStop        StreamCommand = "stop"
+	StreamCommandSeek        StreamCommand = "seek"
+	StreamCommandSetPosition StreamCommand = "setPosition"
+)
+
 type (
 	Error struct {
 		Code    int         `json:"code,omitempty"`
@@ -128,6 +157,39 @@ type (
 			Raw      string            `json:"raw"`
 			Scheme   string            `json:"scheme"`
 		} `json:"uri"`
+		Properties *Properties `json:"properties,omitempty"`
+	}
+
+	Properties struct {
+		PlaybackStatus PlaybackStatus `json:"playbackStatus,omitempty"`
+		LoopStatus     LoopStatus     `json:"loopStatus,omitempty"`
+		Shuffle        bool           `json:"shuffle,omitempty"`
+		Volume         int            `json:"volume,omitempty"`
+		Mute           bool           `json:"mute,omitempty"`
+		Rate           float64        `json:"rate,omitempty"`
+		Position       float64        `json:"position,omitempty"`
+		CanGoNext      bool           `json:"canGoNext,omitempty"`
+		CanGoPrevious  bool           `json:"canGoPrevious,omitempty"`
+		CanPlay        bool           `json:"canPlay,omitempty"`
+		CanPause       bool           `json:"canPause,omitempty"`
+		CanSeek        bool           `json:"canSeek,omitempty"`
+		CanControl     bool           `json:"canControl,omitempty"`
+		Metadata       *Metadata      `json:"metadata,omitempty"`
+	}
+
+	Metadata struct {
+		TrackID     string   `json:"trackId,omitempty"`
+		Title       string   `json:"title,omitempty"`
+		Artist      []string `json:"artist,omitempty"`
+		Album       string   `json:"album,omitempty"`
+		AlbumArtist []string `json:"albumArtist,omitempty"`
+		Genre       []string `json:"genre,omitempty"`
+		Duration    float64  `json:"duration,omitempty"`
+		TrackNumber int      `json:"trackNumber,omitempty"`
+		DiscNumber  int      `json:"discNumber,omitempty"`
+		Date        string   `json:"date,omitempty"`
+		ArtURL      string   `json:"artUrl,omitempty"`
+		URL         string   `json:"url,omitempty"`
 	}
 
 	Snapserver struct {
