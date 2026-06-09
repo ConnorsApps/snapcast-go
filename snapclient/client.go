@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/ConnorsApps/snapcast-go/snapcast"
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
 	"golang.org/x/time/rate"
 )
 
@@ -42,7 +42,7 @@ type Options struct {
 
 func New(o *Options) *Client {
 	if o.RateLimiter == nil {
-		o.RateLimiter = rate.NewLimiter(3, DefaultRequestBurst)
+		o.RateLimiter = rate.NewLimiter(DefaultRequestRate, DefaultRequestBurst)
 	}
 
 	return &Client{
@@ -76,18 +76,16 @@ type Notifications struct {
 }
 
 // Passes a websocket closer channel or an error on initial setup
-func (c *Client) Listen(n *Notifications) (chan error, error) {
+func (c *Client) Listen(ctx context.Context, n *Notifications) (chan error, error) {
 	var (
 		msgChan = make(chan *snapcast.Notification, 5)
 		wsClose = make(chan error)
 	)
 
-	wsClose = make(chan error)
-
-	if err := c.wsConnect(); err != nil {
+	if err := c.wsConnect(ctx); err != nil {
 		return wsClose, err
 	}
-	go c.readNotifications(n, msgChan, wsClose)
+	go c.readNotifications(ctx, n, msgChan, wsClose)
 
 	go func() {
 		for {

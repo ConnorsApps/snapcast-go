@@ -27,7 +27,7 @@ func TestClient(t *testing.T) {
 		}
 	}()
 
-	if _, err := c.Listen(n); err != nil {
+	if _, err := c.Listen(context.Background(), n); err != nil {
 		t.Fatal(err)
 	}
 

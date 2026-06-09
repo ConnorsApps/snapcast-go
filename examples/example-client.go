@@ -28,7 +28,7 @@ func main() {
 		ClientOnNameChanged:   make(chan *snapcast.ClientOnNameChanged),
 	}
 
-	wsClose, err := client.Listen(notify)
+	wsClose, err := client.Listen(context.Background(), notify)
 	check(err)
 
 	// Listen for events

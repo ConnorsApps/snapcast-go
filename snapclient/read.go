@@ -1,17 +1,24 @@
 package snapclient
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/ConnorsApps/snapcast-go/snapcast"
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
 )
 
-func (c *Client) readNotifications(n *Notifications, msgChan chan *snapcast.Notification, wsClose chan error) {
+func (c *Client) readNotifications(ctx context.Context, n *Notifications, msgChan chan *snapcast.Notification, wsClose chan error) {
 	for {
-		_, raw, err := c.ws.ReadMessage()
+		_, raw, err := c.ws.Read(ctx)
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err) {
+			if status := websocket.CloseStatus(err); status != -1 && status != websocket.StatusNormalClosure {
+				close(msgChan)
+				wsClose <- err
+				return
+			}
+
+			if ctx.Err() != nil {
 				close(msgChan)
 				wsClose <- err
 				return

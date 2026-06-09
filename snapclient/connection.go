@@ -1,13 +1,14 @@
 package snapclient
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
-	"github.com/gorilla/websocket"
+	"github.com/coder/websocket"
 )
 
-func (c *Client) wsConnect() error {
+func (c *Client) wsConnect(ctx context.Context) error {
 	scheme := "ws"
 	if c.secureConnection {
 		scheme = "wss"
@@ -18,7 +19,7 @@ func (c *Client) wsConnect() error {
 		err error
 	)
 
-	c.ws, _, err = websocket.DefaultDialer.Dial(u.String(), nil)
+	c.ws, _, err = websocket.Dial(ctx, u.String(), nil)
 	if err != nil {
 		return fmt.Errorf("failed to connect to snapcast at '%s', err: %w", c.host, err)
 	}
@@ -27,13 +28,8 @@ func (c *Client) wsConnect() error {
 }
 
 func (c *Client) Close() error {
-	err := c.ws.WriteMessage(
-		websocket.CloseMessage,
-		websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to write close message to snapcast, err: %w", err)
+	if err := c.ws.Close(websocket.StatusNormalClosure, ""); err != nil {
+		return fmt.Errorf("failed to close snapcast websocket, err: %w", err)
 	}
-
-	return c.ws.Close()
+	return nil
 }
