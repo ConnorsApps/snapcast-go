@@ -19,7 +19,9 @@ func (c *Client) wsConnect(ctx context.Context) error {
 		err error
 	)
 
-	c.ws, _, err = websocket.Dial(ctx, u.String(), nil)
+	c.ws, _, err = websocket.Dial(ctx, u.String(), &websocket.DialOptions{
+		HTTPClient: c.httpClient,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to connect to snapcast at '%s', err: %w", c.host, err)
 	}

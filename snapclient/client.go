@@ -38,6 +38,10 @@ type Options struct {
 	RateLimiter *rate.Limiter
 	// if secure then https & wss and used else http & ws protocols
 	SecureConnection bool
+	// HTTPClient is used for JSON-RPC requests and for the WebSocket upgrade
+	// handshake. Supply an instrumented client (e.g. otelhttp) to add tracing.
+	// If nil, a default client is used.
+	HTTPClient *http.Client
 }
 
 func New(o *Options) *Client {
@@ -45,12 +49,17 @@ func New(o *Options) *Client {
 		o.RateLimiter = rate.NewLimiter(DefaultRequestRate, DefaultRequestBurst)
 	}
 
-	return &Client{
-		host:    o.Host,
-		limiter: o.RateLimiter,
-		httpClient: &http.Client{Transport: &http.Transport{
+	httpClient := o.HTTPClient
+	if httpClient == nil {
+		httpClient = &http.Client{Transport: &http.Transport{
 			MaxIdleConnsPerHost: -1, // Todo, better handle keep alive between snapcast and client
-		}},
+		}}
+	}
+
+	return &Client{
+		host:             o.Host,
+		limiter:          o.RateLimiter,
+		httpClient:       httpClient,
 		secureConnection: o.SecureConnection,
 	}
 }
